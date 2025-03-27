@@ -18,8 +18,11 @@ import androidx.core.content.ContextCompat;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -27,7 +30,7 @@ import java.io.OutputStreamWriter;
 /**
  * @author  Lior Shem Tov
  * @version	1.1
- * @since	03/03/2025
+ * @since	27/03/2025
  * All the functionality
  */
 
@@ -45,6 +48,8 @@ public class MainActivity extends AppCompatActivity
      */
     EditText eD1;
     private final String FILENAME = "Lior.txt";
+    private static final int REQUEST_CODE_PERMISSION = 100;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -52,7 +57,8 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         weddings();
-        /*
+
+
         try
         {
             tv1.setText(read());
@@ -60,8 +66,6 @@ public class MainActivity extends AppCompatActivity
         {
             throw new RuntimeException(e);
         }
-
-         */
 
 
     }
@@ -74,15 +78,110 @@ public class MainActivity extends AppCompatActivity
         tv1 = (TextView) findViewById(R.id.tv1);
         eD1 = (EditText) findViewById(R.id.eD1);
     }
-    
 
-
-    public String read() throws IOException {
-        return "s";
+    /**
+     * Checks if external storage is available for read and write.
+     *
+     * @return true if external storage is mounted and available, false otherwise.
+     */
+    public boolean isExternalStorageAvailable() {
+        String state = Environment.getExternalStorageState();
+        return Environment.MEDIA_MOUNTED.equals(state);
     }
 
+    /**
+     * Checks if the app has permission to write to external storage.
+     *
+     * @return true if permission is granted, false otherwise.
+     */
+    private boolean checkPermission() {
+        int result = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        return result == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * Requests permission to write to external storage if it has not been granted.
+     */
+    private void requestPermission() {
+        if (!checkPermission()) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_CODE_PERMISSION);
+        }
+    }
+
+    /**
+     * Handles the result of the permission request.
+     *
+     * @param requestCode  The request code passed in requestPermissions.
+     * @param permissions  The requested permissions.
+     * @param grantResults The grant results for the corresponding permissions.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQUEST_CODE_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Permission to access external storage granted", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "Permission to access external storage NOT granted", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+
+    /**
+     * Read string.
+     *
+     * @return the string
+     * @throws IOException the io exception
+     */
+    public String read() throws IOException {
+        if(isExternalStorageAvailable() && checkPermission())
+        {
+            File externalDir = Environment.getExternalStorageDirectory();
+            File file = new File(externalDir, FILENAME);
+            file.getParentFile().mkdirs();
+            FileReader reader = new FileReader(file);
+            BufferedReader bR = new BufferedReader(reader);
+            StringBuilder sB = new StringBuilder();
+            String line = "";
+            while ((line = bR.readLine()) != null) {
+                sB.append(line);
+            }
+            bR.close();
+            reader.close();
+            return sB.toString();
+        }
+        else
+        {
+            requestPermission();
+        }
+        return "";
+    }
+
+    /**
+     * Write.
+     *
+     * @param data the data
+     * @throws IOException the io exception
+     */
     public void write(String data) throws IOException {
 
+        if(isExternalStorageAvailable() && checkPermission())
+        {
+            File externalDir = Environment.getExternalStorageDirectory();
+            File file = new File(externalDir, FILENAME);
+            file.getParentFile().mkdirs();
+            FileWriter writer = new FileWriter(file);
+            writer.write(data);
+            writer.close();
+        }
+        else
+        {
+            requestPermission();
+        }
     }
 
 

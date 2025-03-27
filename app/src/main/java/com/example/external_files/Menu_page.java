@@ -15,7 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
  * @author  Lior Shem Tov
  * @version	1.1
  * @since	27/03/2025
- * Credits
+ * Credits page
  */
 
 
